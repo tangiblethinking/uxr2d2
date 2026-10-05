@@ -287,6 +287,15 @@ export function nextId(ids: number[]): number {
   return ids.reduce((max, id) => Math.max(max, id), 0) + 1;
 }
 
+export function addSection(doc: DocState): DocState {
+  const id = nextId(doc.sections.map((section) => section.id));
+  return {
+    ...doc,
+    sections: [...doc.sections, blankSection(id)],
+    sectionOrder: [...doc.sectionOrder, id],
+  };
+}
+
 export function cloneSection(doc: DocState, afterId: number): DocState {
   const source = doc.sections.find((section) => section.id === afterId);
   if (!source) return doc;

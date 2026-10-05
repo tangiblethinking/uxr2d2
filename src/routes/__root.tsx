@@ -32,6 +32,12 @@ export const Route = createRootRoute({
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('uxrnd.theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}",
+          }}
+        />
       </head>
       <body>
         <PreviewHostBridge />

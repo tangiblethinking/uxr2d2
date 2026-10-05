@@ -106,7 +106,7 @@ export function ChartTable({
           </div>
         </div>
       ) : null}
-      <div className="overflow-x-auto">
+      <div className="chart-scroll overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>

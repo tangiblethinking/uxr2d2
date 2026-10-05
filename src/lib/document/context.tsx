@@ -45,9 +45,6 @@ export function DocProvider({ children }: { children: ReactNode }) {
         const next = decodeShare(share);
         setDoc(next);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        params.delete("share");
-        const query = params.toString();
-        window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
         toast.success("Opened shared brief");
         return;
       } catch (error) {

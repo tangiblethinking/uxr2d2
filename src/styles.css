@@ -23,6 +23,20 @@
     0px 24px 60px -16px rgba(28, 36, 48, 0.38);
 }
 
+html.dark {
+  --color-paper: #12161c;
+  --color-sheet: #1b212b;
+  --color-ink: #f4efe6;
+  --color-muted: #aeb6c2;
+  --color-line: #313844;
+  --color-accent: #8fd0e0;
+  --color-accent-ink: #102127;
+  --color-tip: #2a2418;
+  --color-tip-mark: #e0b56a;
+  --color-danger: #e07a70;
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);
@@ -102,13 +116,53 @@
     display: none !important;
   }
   html,
-  body {
+  body,
+  html.dark {
+    --color-paper: #ffffff;
+    --color-sheet: #ffffff;
+    --color-ink: #1c2430;
+    --color-muted: #5e6874;
+    --color-line: #d9d3c8;
+    --color-accent: #1f6f8b;
+    --color-accent-ink: #f3fbfd;
+    --color-tip: #f8f1e3;
     background: white !important;
+    color: #1c2430 !important;
+    color-scheme: light;
   }
-  article {
+  article,
+  .chart-scroll,
+  .chart-scroll table {
     box-shadow: none !important;
+    overflow: visible !important;
+    break-inside: auto;
+  }
+  .chart-scroll table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+  }
+  .chart-scroll th,
+  .chart-scroll td {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal !important;
+  }
+  .chart-scroll tr {
     break-inside: avoid;
   }
+  .sticky-contents {
+    position: static !important;
+  }
+}
+
+@page {
+  size: landscape;
+  margin: 12mm;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -137,10 +137,11 @@ export function toEditorHtml(value: string): string {
 
 export function safeHttpUrl(url: string): string | undefined {
   const trimmed = url.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed || /^\s*javascript:/i.test(trimmed) || /^\s*data:/i.test(trimmed)) return undefined;
+  const withProtocol = /^[a-z][a-z\d+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
-    const parsed = new URL(trimmed);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") return trimmed;
+    const parsed = new URL(withProtocol);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.toString();
   } catch {
     return undefined;
   }

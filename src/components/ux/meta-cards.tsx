@@ -1,35 +1,30 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { ChevronDown, ChevronUp, Code, FileText, Minus, Plus, RotateCcw, Save, Share2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Code, FileText, Link2, Minus, Plus, RotateCcw, Save, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { copy } from "@/lib/document/copy";
 import { plainText, safeHttpUrl } from "@/lib/document/html";
 import { useDoc } from "@/lib/document/context";
-import { moveItem, nextId, normalizeDoc, shareHref } from "@/lib/document/model";
+import { moveItem, nextId, normalizeDoc } from "@/lib/document/model";
 import { FocusCard } from "./focus-card";
 import { RichField, RichRead } from "./rich-text";
 
 const quiet =
   "inline-flex min-h-11 items-center gap-1 rounded-xl px-3 text-sm font-medium text-muted hover:bg-paper hover:text-ink disabled:opacity-40";
 
-function LiveClock() {
-  const [label, setLabel] = useState("—");
-  useEffect(() => {
-    const format = () =>
-      new Date().toLocaleString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      });
-    setLabel(format());
-    const id = window.setInterval(() => setLabel(format()), 1000);
-    return () => window.clearInterval(id);
-  }, []);
-  return <time className="tabular-nums">{label}</time>;
+function savedStamp(iso: string): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
 }
 
 export function HeaderCard() {
@@ -54,20 +49,24 @@ export function HeaderCard() {
           className="text-center font-serif text-4xl leading-tight text-ink"
         />
       )}
-      <div className="mt-4 flex flex-col items-center gap-2 text-sm text-muted md:flex-row md:flex-wrap md:justify-center">
-        <Pair
-          editing={editing}
-          label={doc.authorLabel}
-          labelPlaceholder={copy.authorLabel}
-          onLabel={(value) => set("authorLabel", value)}
-          value={doc.author}
-          valuePlaceholder={copy.author}
-          onValue={(value) => set("author", value)}
-          labelAria="Author label"
-          valueAria="Author"
-        />
-        <span className="hidden md:inline">|</span>
-        <span className="inline-flex items-center gap-1">
+      <div className="mt-4 flex w-full items-start gap-x-4 text-sm leading-relaxed text-muted">
+        <div className="flex min-w-0 flex-1 items-start">
+          <Pair
+            editing={editing}
+            label={doc.authorLabel}
+            labelPlaceholder={copy.authorLabel}
+            onLabel={(value) => set("authorLabel", value)}
+            value={doc.author}
+            valuePlaceholder={copy.author}
+            onValue={(value) => set("author", value)}
+            labelAria="Author label"
+            valueAria="Author"
+          />
+        </div>
+        <span className="hidden shrink-0 pt-1 text-line wide:inline" aria-hidden>
+          |
+        </span>
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           {editing ? (
             <RichField
               value={doc.dateLabel}
@@ -78,22 +77,28 @@ export function HeaderCard() {
               className="font-semibold text-ink"
             />
           ) : (
-            <RichRead value={doc.dateLabel} placeholder={copy.dateLabel} className="font-semibold text-ink" />
+            <RichRead value={doc.dateLabel} placeholder={copy.dateLabel} className="min-w-0 flex-1 break-words font-semibold text-ink" />
           )}
-          <LiveClock />
+          <time dateTime={doc.date || undefined} className="min-w-0 flex-1 break-words tabular-nums">
+            {savedStamp(doc.date)}
+          </time>
+        </div>
+        <span className="hidden shrink-0 pt-1 text-line wide:inline" aria-hidden>
+          |
         </span>
-        <span className="hidden md:inline">|</span>
-        <Pair
-          editing={editing}
-          label={doc.versionLabel}
-          labelPlaceholder={copy.versionLabel}
-          onLabel={(value) => set("versionLabel", value)}
-          value={doc.version}
-          valuePlaceholder={copy.version}
-          onValue={(value) => set("version", value)}
-          labelAria="Version label"
-          valueAria="Version"
-        />
+        <div className="flex min-w-0 flex-1 items-start">
+          <Pair
+            editing={editing}
+            label={doc.versionLabel}
+            labelPlaceholder={copy.versionLabel}
+            onLabel={(value) => set("versionLabel", value)}
+            value={doc.version}
+            valuePlaceholder={copy.version}
+            onValue={(value) => set("version", value)}
+            labelAria="Version label"
+            valueAria="Version"
+          />
+        </div>
       </div>
       <Block
         editing={editing}
@@ -135,7 +140,7 @@ function Pair(props: {
   valueAria: string;
 }) {
   return (
-    <span className="inline-flex flex-wrap items-center justify-center gap-1">
+    <span className="flex min-w-0 w-full flex-wrap items-baseline gap-x-2">
       {props.editing ? (
         <>
           <RichField
@@ -156,8 +161,8 @@ function Pair(props: {
         </>
       ) : (
         <>
-          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="font-semibold text-ink" />
-          <RichRead value={props.value} placeholder={props.valuePlaceholder} />
+          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="min-w-0 flex-1 break-words font-semibold text-ink" />
+          <RichRead value={props.value} placeholder={props.valuePlaceholder} className="min-w-0 flex-1 break-words" />
         </>
       )}
     </span>
@@ -176,7 +181,7 @@ function Block(props: {
   valueAria: string;
 }) {
   return (
-    <div className="mt-5">
+    <div className="mt-5 w-full">
       {props.editing ? (
         <>
           <RichField
@@ -185,20 +190,20 @@ function Block(props: {
             placeholder={props.labelPlaceholder}
             ariaLabel={props.labelAria}
             singleLine
-            className="font-semibold text-ink"
+            className="min-w-0 break-words font-semibold text-ink"
           />
           <RichField
             value={props.value}
             onChange={props.onValue}
             placeholder={props.valuePlaceholder}
             ariaLabel={props.valueAria}
-            className="mt-1 text-base leading-relaxed"
+            className="mt-1 min-w-0 break-words text-base leading-relaxed"
           />
         </>
       ) : (
         <>
-          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="font-semibold text-ink" />
-          <RichRead value={props.value} placeholder={props.valuePlaceholder} className="mt-1 text-base leading-relaxed" />
+          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="break-words font-semibold text-ink" />
+          <RichRead value={props.value} placeholder={props.valuePlaceholder} className="mt-1 break-words text-base leading-relaxed" />
         </>
       )}
     </div>
@@ -278,8 +283,22 @@ export function AddProTip() {
   );
 }
 
+function LinkLabel({ displayText, url }: { displayText: string; url: string }) {
+  const label = plainText(displayText);
+  const href = safeHttpUrl(url);
+  if (!label) return <span className="text-sm text-muted italic">{copy.linkLabel}</span>;
+  if (!href) return <span className="text-base text-ink">{label}</span>;
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-base text-accent underline">
+      {label}
+    </a>
+  );
+}
+
 export function ReferencesCard() {
   const { doc, update } = useDoc();
+  const [urlIndex, setUrlIndex] = useState<number | null>(null);
+  const editingUrl = urlIndex !== null ? doc.links[urlIndex] : undefined;
   const fields = (editing: boolean) => (
     <div className="grid gap-6 md:grid-cols-2">
       <div>
@@ -373,10 +392,8 @@ export function ReferencesCard() {
           ) : null}
         </div>
         <ul className="space-y-3">
-          {doc.links.map((link, index) => {
-            const href = safeHttpUrl(link.url);
-            return (
-              <li key={`link-${index}`}>
+          {doc.links.map((link, index) => (
+            <li key={`link-${index}`}>
                 {editing ? (
                   <div className="rounded-xl bg-paper p-3">
                     <div className="mb-2 flex gap-1">
@@ -426,42 +443,71 @@ export function ReferencesCard() {
                         }))
                       }
                     />
-                    <label className="mt-2 block text-sm text-muted">
-                      {copy.linkUrl}
-                      <input
-                        type="url"
-                        inputMode="url"
-                        value={link.url}
-                        placeholder="https://"
-                        onChange={(event) =>
-                          update((current) => ({
-                            ...current,
-                            links: current.links.map((item, itemIndex) =>
-                              itemIndex === index ? { ...item, url: event.target.value } : item,
-                            ),
-                          }))
-                        }
-                        className="mt-1 w-full rounded-xl border border-line bg-sheet px-3 py-3 text-base break-all text-ink outline-none"
-                      />
-                    </label>
+                    <button type="button" className={`${quiet} mt-2`} onClick={() => setUrlIndex(index)}>
+                      <Link2 className="size-4" /> Edit URL
+                    </button>
+                    {plainText(link.displayText) ? (
+                      <div className="mt-2">
+                        <LinkLabel displayText={link.displayText} url={link.url} />
+                      </div>
+                    ) : null}
                   </div>
-                ) : href ? (
-                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent underline">
-                    {plainText(link.displayText) || href}
-                  </a>
                 ) : (
-                  <RichRead value={link.displayText} placeholder={copy.linkLabel} className="text-accent" />
+                  <LinkLabel displayText={link.displayText} url={link.url} />
                 )}
-              </li>
-            );
-          })}
+            </li>
+          ))}
           {doc.links.length === 0 ? <li className="text-sm text-muted italic">{copy.linkLabel}</li> : null}
         </ul>
       </div>
     </div>
   );
 
-  return <FocusCard kicker="References & links" title="References & links" read={fields(false)} edit={fields(true)} />;
+  return (
+    <>
+      <FocusCard kicker="References & links" title="References & links" read={fields(false)} edit={fields(true)} />
+      <Dialog.Root open={urlIndex !== null} onOpenChange={(open) => !open && setUrlIndex(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="no-print fixed inset-0 z-[60] bg-ink/40" />
+          <Dialog.Content className="no-print fixed top-1/2 left-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-sheet p-5 shadow-lift focus:outline-none">
+            <Dialog.Title className="font-serif text-2xl text-ink">Link URL</Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted">
+              Only the label is shown. This address stays behind that text.
+            </Dialog.Description>
+            <label className="mt-4 block text-sm text-muted">
+              {copy.linkUrl}
+              <input
+                type="url"
+                inputMode="url"
+                value={editingUrl?.url ?? ""}
+                placeholder="https:// or www.example.com"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (urlIndex === null) return;
+                  update((current) => ({
+                    ...current,
+                    links: current.links.map((item, itemIndex) =>
+                      itemIndex === urlIndex ? { ...item, url: value } : item,
+                    ),
+                  }));
+                }}
+                className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-3 text-base text-ink outline-none"
+              />
+            </label>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink"
+                onClick={() => setUrlIndex(null)}
+              >
+                Done
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </>
+  );
 }
 
 export function FooterCard() {
@@ -480,7 +526,7 @@ export function FooterCard() {
         <RichRead value={doc.footerCopyright} placeholder={copy.footer} className="text-center" />
       )}
       <p className="mt-2 italic">
-        <LiveClock />
+        <time dateTime={doc.date || undefined}>{savedStamp(doc.date)}</time>
       </p>
       {printShareUrl ? (
         <p className="print-only mt-6 border-t border-line pt-4">
@@ -532,28 +578,23 @@ export function ActionDock() {
       setCode(url);
       setCodeOpen(true);
     }
-    window.open("https://tinyurl.com/", "_blank", "noopener,noreferrer");
   };
 
   const downloadPdf = () => {
-    const next = save(true);
-    let url = "";
     try {
-      url = shareHref(next);
+      setPrintShareUrl(shareCurrent());
     } catch (error) {
       console.error(error);
     }
-    setPrintShareUrl(url);
-    toast.success(`Version ${next.version} saved`);
     window.setTimeout(() => window.print(), 80);
   };
 
   const actions = [
     { label: "Code", icon: Code, onClick: openCode, hint: "Import or export the brief as JSON" },
-    { label: "Share", icon: Share2, onClick: () => void share(), hint: "Copy a link, then open TinyURL" },
-    { label: "Save", icon: Save, onClick: () => save(false), hint: "Save this brief on this device and bump the version" },
+    { label: "Share", icon: Share2, onClick: () => void share(), hint: "Copy a link that keeps this brief in the address" },
+    { label: "Save", icon: Save, onClick: () => save(false), hint: "Save this brief on this device, stamp the time, and bump the version" },
     { label: "Reset", icon: RotateCcw, onClick: () => setResetOpen(true), hint: "Clear this brief" },
-    { label: "PDF", icon: FileText, onClick: downloadPdf, hint: "Save, then open the print dialog" },
+    { label: "PDF", icon: FileText, onClick: downloadPdf, hint: "Open the print dialog without changing the version" },
   ];
 
   return (

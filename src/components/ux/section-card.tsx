@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, Plus, X } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Minus, MoreHorizontal, Plus, X } from "lucide-react";
 import { copy } from "@/lib/document/copy";
 import { plainText, safeHttpUrl } from "@/lib/document/html";
 import {
+  addSection,
   blankTable,
-  cloneSection,
   moveItem,
   moveSection,
   nextId,
@@ -64,13 +65,6 @@ export function SectionCard({ section, index, total }: { section: SectionData; i
                 </button>
               ))}
             </div>
-            <button
-              type="button"
-              className={quiet}
-              onClick={() => update((doc) => cloneSection(doc, section.id))}
-            >
-              <Plus className="size-4" /> Add section
-            </button>
             <button
               type="button"
               className={quiet}
@@ -197,6 +191,19 @@ export function SectionCard({ section, index, total }: { section: SectionData; i
   );
 }
 
+export function AddSection() {
+  const { update } = useDoc();
+  return (
+    <button
+      type="button"
+      className={`${quiet} no-print`}
+      onClick={() => update((doc) => addSection(doc))}
+    >
+      <Plus className="size-4" /> Add section
+    </button>
+  );
+}
+
 function ImageRow({
   section,
   editing,
@@ -207,6 +214,7 @@ function ImageRow({
   patch: (recipe: (current: SectionData) => SectionData) => void;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [urlIndex, setUrlIndex] = useState<number | null>(null);
   const images = section.images;
   const open = openIndex !== null ? images[openIndex] : undefined;
 
@@ -265,7 +273,17 @@ function ImageRow({
                   </button>
                 </div>
               ) : null}
-              <div className={`frame-portrait overflow-hidden rounded-xl bg-paper ${url ? "" : "print:hidden"}`}>
+              <div className={`frame-portrait relative overflow-hidden rounded-xl bg-paper ${url ? "" : "print:hidden"}`}>
+                {editing ? (
+                  <button
+                    type="button"
+                    className="no-print absolute top-2 right-2 z-10 inline-flex size-11 items-center justify-center rounded-full bg-sheet/95 text-ink shadow-border"
+                    aria-label={href ? "Edit image URL" : "Add image URL"}
+                    onClick={() => setUrlIndex(imageIndex)}
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </button>
+                ) : null}
                 {href ? (
                   <a
                     href={href}
@@ -289,24 +307,6 @@ function ImageRow({
                   </div>
                 )}
               </div>
-              {editing ? (
-                <label className="mt-2 block text-sm text-muted">
-                  {copy.imageUrl}
-                  <input
-                    type="url"
-                    inputMode="url"
-                    value={url}
-                    placeholder="https://"
-                    onChange={(event) =>
-                      patch((current) => ({
-                        ...current,
-                        images: current.images.map((item, index) => (index === imageIndex ? event.target.value : item)),
-                      }))
-                    }
-                    className="mt-1 w-full rounded-xl border border-line bg-sheet px-3 py-3 text-base break-all text-ink outline-none"
-                  />
-                </label>
-              ) : null}
             </div>
           );
         })}
@@ -358,6 +358,45 @@ function ImageRow({
           </div>
         </div>
       ) : null}
+
+      <Dialog.Root open={urlIndex !== null} onOpenChange={(openDialog) => !openDialog && setUrlIndex(null)}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="no-print fixed inset-0 z-[60] bg-ink/40" />
+          <Dialog.Content className="no-print fixed top-1/2 left-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-sheet p-5 shadow-lift focus:outline-none">
+            <Dialog.Title className="font-serif text-2xl text-ink">Image URL</Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted">
+              Paste the address for this image. It is not shown under the picture.
+            </Dialog.Description>
+            <label className="mt-4 block text-sm text-muted">
+              {copy.imageUrl}
+              <input
+                type="url"
+                inputMode="url"
+                value={urlIndex !== null ? (images[urlIndex] ?? "") : ""}
+                placeholder="https:// or www.example.com"
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (urlIndex === null) return;
+                  patch((current) => ({
+                    ...current,
+                    images: current.images.map((item, index) => (index === urlIndex ? value : item)),
+                  }));
+                }}
+                className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-3 text-base text-ink outline-none"
+              />
+            </label>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink"
+                onClick={() => setUrlIndex(null)}
+              >
+                Done
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 }
