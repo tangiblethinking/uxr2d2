@@ -49,22 +49,20 @@ export function HeaderCard() {
           className="text-center font-serif text-4xl leading-tight text-ink"
         />
       )}
-      <div className="mt-4 w-full space-y-3 text-sm leading-relaxed text-muted">
-        <div className="flex w-full min-w-0 items-baseline gap-3">
-          <Pair
-            editing={editing}
-            label={doc.authorLabel}
-            labelPlaceholder={copy.authorLabel}
-            onLabel={(value) => set("authorLabel", value)}
-            value={doc.author}
-            valuePlaceholder={copy.author}
-            onValue={(value) => set("author", value)}
-            labelAria="Author label"
-            valueAria="Author"
-          />
-        </div>
-        <div className="flex w-full min-w-0 items-baseline gap-3">
-          {editing ? (
+      <div className="mt-4 flex w-full flex-wrap items-baseline gap-x-8 gap-y-2 text-sm leading-relaxed text-muted">
+        <Pair
+          editing={editing}
+          label={doc.authorLabel}
+          labelPlaceholder={copy.authorLabel}
+          onLabel={(value) => set("authorLabel", value)}
+          value={doc.author}
+          valuePlaceholder={copy.author}
+          onValue={(value) => set("author", value)}
+          labelAria="Author label"
+          valueAria="Author"
+        />
+        {editing ? (
+          <span className="flex min-w-0 flex-1 basis-0 items-baseline gap-2 whitespace-nowrap">
             <RichField
               value={doc.dateLabel}
               onChange={(value) => set("dateLabel", value)}
@@ -72,28 +70,27 @@ export function HeaderCard() {
               ariaLabel="Date label"
               singleLine
               shellClassName="shrink-0"
-              className="font-semibold whitespace-nowrap text-ink"
+              className="font-semibold text-ink"
             />
-          ) : (
+            <time dateTime={doc.date || undefined}>{savedStamp(doc.date)}</time>
+          </span>
+        ) : (
+          <span className="flex min-w-0 flex-1 basis-0 items-baseline gap-2 whitespace-nowrap">
             <RichRead value={doc.dateLabel} placeholder={copy.dateLabel} className="shrink-0 font-semibold text-ink" />
-          )}
-          <time dateTime={doc.date || undefined} className="min-w-0 flex-1 break-words">
-            {savedStamp(doc.date)}
-          </time>
-        </div>
-        <div className="flex w-full min-w-0 items-baseline gap-3">
-          <Pair
-            editing={editing}
-            label={doc.versionLabel}
-            labelPlaceholder={copy.versionLabel}
-            onLabel={(value) => set("versionLabel", value)}
-            value={doc.version}
-            valuePlaceholder={copy.version}
-            onValue={(value) => set("version", value)}
-            labelAria="Version label"
-            valueAria="Version"
-          />
-        </div>
+            <time dateTime={doc.date || undefined}>{savedStamp(doc.date)}</time>
+          </span>
+        )}
+        <Pair
+          editing={editing}
+          label={doc.versionLabel}
+          labelPlaceholder={copy.versionLabel}
+          onLabel={(value) => set("versionLabel", value)}
+          value={doc.version}
+          valuePlaceholder={copy.version}
+          onValue={(value) => set("version", value)}
+          labelAria="Version label"
+          valueAria="Version"
+        />
       </div>
       <Block
         editing={editing}
@@ -135,7 +132,7 @@ function Pair(props: {
   valueAria: string;
 }) {
   return (
-    <span className="flex w-full min-w-0 items-baseline gap-3">
+    <span className="flex min-w-0 flex-1 basis-0 items-baseline gap-2 whitespace-nowrap">
       {props.editing ? (
         <>
           <RichField
@@ -145,7 +142,7 @@ function Pair(props: {
             ariaLabel={props.labelAria}
             singleLine
             shellClassName="shrink-0"
-            className="font-semibold whitespace-nowrap text-ink"
+            className="font-semibold text-ink"
           />
           <RichField
             value={props.value}
@@ -159,7 +156,7 @@ function Pair(props: {
         </>
       ) : (
         <>
-          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="shrink-0 font-semibold whitespace-nowrap text-ink" />
+          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="shrink-0 font-semibold text-ink" />
           <RichRead value={props.value} placeholder={props.valuePlaceholder} className="min-w-0 flex-1 break-words" />
         </>
       )}
@@ -283,73 +280,122 @@ export function AddProTip() {
   );
 }
 
-function EmbeddedLink({
-  displayText,
-  url,
-  editing,
-  onText,
-  onUrl,
-}: {
-  displayText: string;
-  url: string;
-  editing: boolean;
-  onText: (value: string) => void;
-  onUrl: (value: string) => void;
-}) {
+function LinkText({ displayText, url }: { displayText: string; url: string }) {
   const label = plainText(displayText);
   const href = safeHttpUrl(url);
-  const [open, setOpen] = useState(false);
-
-  if (!editing) {
-    if (!label) return null;
-    if (!href) return <span className="block w-full text-base text-ink">{label}</span>;
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="block w-full text-base text-accent underline">
-        {label}
-      </a>
-    );
-  }
-
+  if (!label) return null;
+  if (!href) return <span className="text-base text-ink">{label}</span>;
   return (
-    <div
-      className="relative w-full min-w-0"
-      onFocus={() => setOpen(true)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
-      }}
-    >
-      <RichField
-        value={displayText}
-        onChange={onText}
-        placeholder={copy.linkLabel}
-        ariaLabel="Link text"
-        singleLine
-        shellClassName="w-full"
-        className={`w-full text-base ${href && label ? "text-accent underline" : ""}`}
-      />
-      {open ? (
-        <input
-          type="url"
-          inputMode="url"
-          aria-label={copy.linkUrl}
-          value={url}
-          placeholder="https://"
-          onChange={(event) => onUrl(event.target.value)}
-          className="absolute top-full left-0 z-30 mt-1 w-full rounded-xl border border-line bg-sheet px-3 py-2 text-base text-ink shadow-lift outline-none"
-        />
-      ) : null}
-    </div>
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-base text-accent underline">
+      {label}
+    </a>
   );
 }
 
 export function ReferencesCard() {
   const { doc, update } = useDoc();
-  const fields = (editing: boolean) => (
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [draftText, setDraftText] = useState("");
+  const [draftUrl, setDraftUrl] = useState("");
+
+  const commitLink = () => {
+    const displayText = draftText.trim();
+    if (!displayText) return;
+    update((current) => ({
+      ...current,
+      links: [...current.links, { displayText, url: draftUrl.trim() }],
+    }));
+    setDraftText("");
+    setDraftUrl("");
+    setComposerOpen(false);
+  };
+
+  const linkList = (mode: "show" | "page" | "edit") => (
+    <ul className="space-y-2">
+      {doc.links.map((link, index) => {
+        const label = plainText(link.displayText);
+        if (mode === "show" && !label) return null;
+        return (
+          <li key={`link-${index}`} className="flex w-full min-w-0 items-center gap-2">
+            {mode === "edit" ? (
+              <>
+                <button
+                  type="button"
+                  className={quiet}
+                  aria-label="Move link up"
+                  disabled={index === 0}
+                  onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index - 1) }))}
+                >
+                  <ChevronUp className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  className={quiet}
+                  aria-label="Move link down"
+                  disabled={index === doc.links.length - 1}
+                  onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index + 1) }))}
+                >
+                  <ChevronDown className="size-4" />
+                </button>
+                <input
+                  value={plainText(link.displayText)}
+                  aria-label={`Link ${index + 1} text`}
+                  placeholder={copy.linkLabel}
+                  onChange={(event) =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, displayText: event.target.value } : item,
+                      ),
+                    }))
+                  }
+                  className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none"
+                />
+                <input
+                  type="url"
+                  inputMode="url"
+                  value={link.url}
+                  aria-label={`Link ${index + 1} URL`}
+                  placeholder="https://"
+                  onChange={(event) =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, url: event.target.value } : item,
+                      ),
+                    }))
+                  }
+                  className="min-w-0 flex-1 bg-transparent text-base text-muted outline-none"
+                />
+                <button
+                  type="button"
+                  className={quiet}
+                  aria-label="Remove link"
+                  onClick={() =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.filter((_, itemIndex) => itemIndex !== index),
+                    }))
+                  }
+                >
+                  <Minus className="size-4" />
+                </button>
+              </>
+            ) : (
+              <LinkText displayText={link.displayText} url={link.url} />
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
+  const fields = (mode: "show" | "page" | "edit") => (
     <div className="grid gap-6 md:grid-cols-2">
       <div>
         <div className="mb-2 flex items-center gap-2">
           <span className="text-sm font-semibold text-ink">Reference</span>
-          {editing ? (
+          {mode !== "show" ? (
             <button
               type="button"
               className={quiet}
@@ -362,7 +408,7 @@ export function ReferencesCard() {
         <ul className="space-y-2">
           {doc.references.map((reference, index) => (
             <li key={`ref-${index}`} className="flex items-start gap-1">
-              {editing ? (
+              {mode !== "show" ? (
                 <>
                   <button
                     type="button"
@@ -424,89 +470,69 @@ export function ReferencesCard() {
       <div>
         <div className="mb-2 flex items-center gap-2">
           <span className="text-sm font-semibold text-ink">Link</span>
-          {editing ? (
-            <button
-              type="button"
-              className={quiet}
-              onClick={() =>
-                update((current) => ({ ...current, links: [...current.links, { url: "", displayText: "" }] }))
-              }
-            >
-              <Plus className="size-4" /> Add
-            </button>
-          ) : null}
+          <button type="button" className={`${quiet} no-print`} onClick={() => setComposerOpen(true)}>
+            <Plus className="size-4" /> Add
+          </button>
         </div>
-        <ul className="space-y-2">
-          {doc.links.map((link, index) => (
-            <li key={`link-${index}`} className="flex w-full min-w-0 items-start gap-1">
-              {editing ? (
-                <>
-                  <button
-                    type="button"
-                    className={`${quiet} focus-only`}
-                    aria-label="Move link up"
-                    disabled={index === 0}
-                    onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index - 1) }))}
-                  >
-                    <ChevronUp className="size-4" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`${quiet} focus-only`}
-                    aria-label="Move link down"
-                    disabled={index === doc.links.length - 1}
-                    onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index + 1) }))}
-                  >
-                    <ChevronDown className="size-4" />
-                  </button>
-                </>
-              ) : null}
-              <div className="min-w-0 flex-1">
-                <EmbeddedLink
-                  displayText={link.displayText}
-                  url={link.url}
-                  editing={editing}
-                  onText={(displayText) =>
-                    update((current) => ({
-                      ...current,
-                      links: current.links.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, displayText } : item,
-                      ),
-                    }))
-                  }
-                  onUrl={(nextUrl) =>
-                    update((current) => ({
-                      ...current,
-                      links: current.links.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, url: nextUrl } : item,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              {editing ? (
-                <button
-                  type="button"
-                  className={`${quiet} focus-only`}
-                  aria-label="Remove link"
-                  onClick={() =>
-                    update((current) => ({
-                      ...current,
-                      links: current.links.filter((_, itemIndex) => itemIndex !== index),
-                    }))
-                  }
-                >
-                  <Minus className="size-4" />
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        {linkList(mode)}
       </div>
     </div>
   );
 
-  return <FocusCard kicker="References & links" title="References & links" read={fields(false)} edit={fields(true)} />;
+  return (
+    <>
+      <FocusCard
+        kicker="References & links"
+        title="References & links"
+        read={fields("show")}
+        edit={fields("page")}
+        dialog={fields("edit")}
+      />
+      <Dialog.Root open={composerOpen} onOpenChange={setComposerOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="no-print fixed inset-0 z-[60] bg-ink/40" />
+          <Dialog.Content className="no-print fixed top-1/2 left-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-sheet p-5 shadow-lift focus:outline-none">
+            <Dialog.Title className="font-serif text-2xl text-ink">Add link</Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-muted">
+              The page shows only the text. The address opens in a new tab.
+            </Dialog.Description>
+            <label className="mt-4 block text-sm text-muted">
+              Text
+              <input
+                value={draftText}
+                placeholder={copy.linkLabel}
+                onChange={(event) => setDraftText(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-3 text-base text-ink outline-none"
+              />
+            </label>
+            <label className="mt-3 block text-sm text-muted">
+              URL
+              <input
+                type="url"
+                inputMode="url"
+                value={draftUrl}
+                placeholder="https:// or www.example.com"
+                onChange={(event) => setDraftUrl(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-3 text-base text-ink outline-none"
+              />
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" className={quiet} onClick={() => setComposerOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink"
+                onClick={commitLink}
+              >
+                Add
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </>
+  );
 }
 
 export function FooterCard() {

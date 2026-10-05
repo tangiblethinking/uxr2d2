@@ -41,37 +41,40 @@ function Contents() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const nodes = sections
-      .map((section) => document.getElementById(`section-${section.id}`))
-      .filter((node): node is HTMLElement => !!node);
-    if (nodes.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        const current = visible[0];
-        if (!current) return;
-        const id = Number((current.target as HTMLElement).dataset.sectionId);
-        if (Number.isFinite(id)) setActive(id);
-      },
-      { rootMargin: "-48px 0px -55% 0px", threshold: [0, 0.15, 0.4] },
-    );
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    const ids = sections.map((section) => section.id);
+    let frame = 0;
+    const update = () => {
+      const marker = 72;
+      let current = ids[0] ?? null;
+      for (const id of ids) {
+        const node = document.getElementById(`section-${id}`);
+        if (!node) continue;
+        if (node.getBoundingClientRect().top - marker <= 0) current = id;
+      }
+      setActive((previous) => (previous === current ? previous : current));
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [doc.sectionOrder.join("|"), sections.length]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
-    window.addEventListener("scroll", close, { passive: true });
-    return () => window.removeEventListener("scroll", close);
-  }, [menuOpen]);
 
   const activeSection = sections.find((section) => section.id === active) ?? sections[0];
   const jump = (id: number) => {
     setMenuOpen(false);
-    document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setActive(id);
+    const node = document.getElementById(`section-${id}`);
+    if (!node) return;
+    const top = node.getBoundingClientRect().top + window.scrollY - 64;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   };
 
   return (

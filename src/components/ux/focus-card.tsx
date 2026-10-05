@@ -9,6 +9,7 @@ export function FocusCard({
   tone = "sheet",
   read,
   edit,
+  dialog,
 }: {
   kicker: string;
   title: string;
@@ -16,6 +17,7 @@ export function FocusCard({
   tone?: "sheet" | "tip";
   read: ReactNode;
   edit: ReactNode;
+  dialog?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const surface = tone === "tip" ? "bg-tip" : "bg-sheet";
@@ -24,34 +26,28 @@ export function FocusCard({
     <article
       id={sectionId ? `section-${sectionId}` : undefined}
       data-section-id={sectionId}
-      className={`scroll-mt-16 rounded-2xl shadow-border ${surface}`}
+      className={`relative scroll-mt-16 rounded-2xl shadow-border ${surface}`}
     >
-      <div className="flex items-center justify-between gap-3 px-4 pt-4 md:px-6 md:pt-5">
-        <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">{kicker}</p>
-        <button
-          type="button"
-          className="no-print inline-flex size-11 items-center justify-center rounded-xl text-ink hover:bg-paper"
-          aria-label={`Edit ${kicker}`}
-          onClick={() => setOpen(true)}
-        >
-          <Pencil className="size-4" />
-        </button>
-      </div>
-      <div className="read-surface px-4 pb-5 wide:hidden md:px-6 md:pb-6">{read}</div>
-      <div className="edit-surface hidden px-4 pb-5 wide:block md:px-6 md:pb-6">{open ? null : edit}</div>
+      <button
+        type="button"
+        className="no-print absolute top-3 right-3 z-10 inline-flex size-11 items-center justify-center rounded-xl text-ink hover:bg-paper"
+        aria-label={`Edit ${kicker}`}
+        onClick={() => setOpen(true)}
+      >
+        <Pencil className="size-4" />
+      </button>
+      <div className="read-surface px-4 py-5 pr-14 wide:hidden md:px-6 md:py-6 md:pr-16">{read}</div>
+      <div className="edit-surface hidden px-4 py-5 pr-14 wide:block md:px-6 md:py-6 md:pr-16">{open ? null : edit}</div>
 
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="no-print fixed inset-0 z-40 bg-ink/40" />
           <Dialog.Content className="focus-panel z-50 focus:outline-none">
-            <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">{kicker}</p>
-                <Dialog.Title className="truncate font-serif text-xl text-ink">{title || kicker}</Dialog.Title>
-                <Dialog.Description className="sr-only">
-                  Focused editing for {kicker}. Changes stay in the brief. Choose Done when finished.
-                </Dialog.Description>
-              </div>
+            <div className="flex items-center justify-end gap-3 border-b border-line px-4 py-3">
+              <Dialog.Title className="sr-only">{title || kicker}</Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Focused editing. Changes stay in the brief. Choose Done when finished.
+              </Dialog.Description>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -62,7 +58,7 @@ export function FocusCard({
               </button>
             </div>
             <div className={`min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5 ${tone === "tip" ? "bg-tip" : ""}`}>
-              {open ? edit : null}
+              {open ? (dialog ?? edit) : null}
             </div>
           </Dialog.Content>
         </Dialog.Portal>
