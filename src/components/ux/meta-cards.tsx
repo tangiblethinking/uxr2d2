@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { ChevronDown, ChevronUp, Code, FileText, Link2, Minus, Plus, RotateCcw, Save, Share2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Code, FileText, Minus, Plus, RotateCcw, Save, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { copy } from "@/lib/document/copy";
 import { plainText, safeHttpUrl } from "@/lib/document/html";
@@ -49,8 +49,8 @@ export function HeaderCard() {
           className="text-center font-serif text-4xl leading-tight text-ink"
         />
       )}
-      <div className="mt-4 flex w-full items-start gap-x-4 text-sm leading-relaxed text-muted">
-        <div className="flex min-w-0 flex-1 items-start">
+      <div className="mt-4 w-full space-y-3 text-sm leading-relaxed text-muted">
+        <div className="flex w-full min-w-0 items-baseline gap-3">
           <Pair
             editing={editing}
             label={doc.authorLabel}
@@ -63,10 +63,7 @@ export function HeaderCard() {
             valueAria="Author"
           />
         </div>
-        <span className="hidden shrink-0 pt-1 text-line wide:inline" aria-hidden>
-          |
-        </span>
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+        <div className="flex w-full min-w-0 items-baseline gap-3">
           {editing ? (
             <RichField
               value={doc.dateLabel}
@@ -74,19 +71,17 @@ export function HeaderCard() {
               placeholder={copy.dateLabel}
               ariaLabel="Date label"
               singleLine
-              className="font-semibold text-ink"
+              shellClassName="shrink-0"
+              className="font-semibold whitespace-nowrap text-ink"
             />
           ) : (
-            <RichRead value={doc.dateLabel} placeholder={copy.dateLabel} className="min-w-0 flex-1 break-words font-semibold text-ink" />
+            <RichRead value={doc.dateLabel} placeholder={copy.dateLabel} className="shrink-0 font-semibold text-ink" />
           )}
-          <time dateTime={doc.date || undefined} className="min-w-0 flex-1 break-words tabular-nums">
+          <time dateTime={doc.date || undefined} className="min-w-0 flex-1 break-words">
             {savedStamp(doc.date)}
           </time>
         </div>
-        <span className="hidden shrink-0 pt-1 text-line wide:inline" aria-hidden>
-          |
-        </span>
-        <div className="flex min-w-0 flex-1 items-start">
+        <div className="flex w-full min-w-0 items-baseline gap-3">
           <Pair
             editing={editing}
             label={doc.versionLabel}
@@ -140,7 +135,7 @@ function Pair(props: {
   valueAria: string;
 }) {
   return (
-    <span className="flex min-w-0 w-full flex-wrap items-baseline gap-x-2">
+    <span className="flex w-full min-w-0 items-baseline gap-3">
       {props.editing ? (
         <>
           <RichField
@@ -149,7 +144,8 @@ function Pair(props: {
             placeholder={props.labelPlaceholder}
             ariaLabel={props.labelAria}
             singleLine
-            className="font-semibold text-ink"
+            shellClassName="shrink-0"
+            className="font-semibold whitespace-nowrap text-ink"
           />
           <RichField
             value={props.value}
@@ -157,11 +153,13 @@ function Pair(props: {
             placeholder={props.valuePlaceholder}
             ariaLabel={props.valueAria}
             singleLine
+            shellClassName="min-w-0 w-full flex-1"
+            className="w-full"
           />
         </>
       ) : (
         <>
-          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="min-w-0 flex-1 break-words font-semibold text-ink" />
+          <RichRead value={props.label} placeholder={props.labelPlaceholder} className="shrink-0 font-semibold whitespace-nowrap text-ink" />
           <RichRead value={props.value} placeholder={props.valuePlaceholder} className="min-w-0 flex-1 break-words" />
         </>
       )}
@@ -190,14 +188,16 @@ function Block(props: {
             placeholder={props.labelPlaceholder}
             ariaLabel={props.labelAria}
             singleLine
-            className="min-w-0 break-words font-semibold text-ink"
+            shellClassName="w-full"
+            className="min-w-0 w-full break-words font-semibold text-ink"
           />
           <RichField
             value={props.value}
             onChange={props.onValue}
             placeholder={props.valuePlaceholder}
             ariaLabel={props.valueAria}
-            className="mt-1 min-w-0 break-words text-base leading-relaxed"
+            shellClassName="w-full"
+            className="mt-1 min-w-0 w-full break-words text-base leading-relaxed"
           />
         </>
       ) : (
@@ -283,22 +283,67 @@ export function AddProTip() {
   );
 }
 
-function LinkLabel({ displayText, url }: { displayText: string; url: string }) {
+function EmbeddedLink({
+  displayText,
+  url,
+  editing,
+  onText,
+  onUrl,
+}: {
+  displayText: string;
+  url: string;
+  editing: boolean;
+  onText: (value: string) => void;
+  onUrl: (value: string) => void;
+}) {
   const label = plainText(displayText);
   const href = safeHttpUrl(url);
-  if (!label) return <span className="text-sm text-muted italic">{copy.linkLabel}</span>;
-  if (!href) return <span className="text-base text-ink">{label}</span>;
+  const [open, setOpen] = useState(false);
+
+  if (!editing) {
+    if (!label) return null;
+    if (!href) return <span className="block w-full text-base text-ink">{label}</span>;
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block w-full text-base text-accent underline">
+        {label}
+      </a>
+    );
+  }
+
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-base text-accent underline">
-      {label}
-    </a>
+    <div
+      className="relative w-full min-w-0"
+      onFocus={() => setOpen(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <RichField
+        value={displayText}
+        onChange={onText}
+        placeholder={copy.linkLabel}
+        ariaLabel="Link text"
+        singleLine
+        shellClassName="w-full"
+        className={`w-full text-base ${href && label ? "text-accent underline" : ""}`}
+      />
+      {open ? (
+        <input
+          type="url"
+          inputMode="url"
+          aria-label={copy.linkUrl}
+          value={url}
+          placeholder="https://"
+          onChange={(event) => onUrl(event.target.value)}
+          className="absolute top-full left-0 z-30 mt-1 w-full rounded-xl border border-line bg-sheet px-3 py-2 text-base text-ink shadow-lift outline-none"
+        />
+      ) : null}
+    </div>
   );
 }
 
 export function ReferencesCard() {
   const { doc, update } = useDoc();
-  const [urlIndex, setUrlIndex] = useState<number | null>(null);
-  const editingUrl = urlIndex !== null ? doc.links[urlIndex] : undefined;
   const fields = (editing: boolean) => (
     <div className="grid gap-6 md:grid-cols-2">
       <div>
@@ -391,123 +436,77 @@ export function ReferencesCard() {
             </button>
           ) : null}
         </div>
-        <ul className="space-y-3">
+        <ul className="space-y-2">
           {doc.links.map((link, index) => (
-            <li key={`link-${index}`}>
-                {editing ? (
-                  <div className="rounded-xl bg-paper p-3">
-                    <div className="mb-2 flex gap-1">
-                      <button
-                        type="button"
-                        className={`${quiet} focus-only`}
-                        aria-label="Move link up"
-                        disabled={index === 0}
-                        onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index - 1) }))}
-                      >
-                        <ChevronUp className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${quiet} focus-only`}
-                        aria-label="Move link down"
-                        disabled={index === doc.links.length - 1}
-                        onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index + 1) }))}
-                      >
-                        <ChevronDown className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className={quiet}
-                        aria-label="Remove link"
-                        onClick={() =>
-                          update((current) => ({
-                            ...current,
-                            links: current.links.filter((_, itemIndex) => itemIndex !== index),
-                          }))
-                        }
-                      >
-                        <Minus className="size-4" />
-                      </button>
-                    </div>
-                    <RichField
-                      value={link.displayText}
-                      ariaLabel={`Link ${index + 1} label`}
-                      placeholder={copy.linkLabel}
-                      singleLine
-                      onChange={(displayText) =>
-                        update((current) => ({
-                          ...current,
-                          links: current.links.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, displayText } : item,
-                          ),
-                        }))
-                      }
-                    />
-                    <button type="button" className={`${quiet} mt-2`} onClick={() => setUrlIndex(index)}>
-                      <Link2 className="size-4" /> Edit URL
-                    </button>
-                    {plainText(link.displayText) ? (
-                      <div className="mt-2">
-                        <LinkLabel displayText={link.displayText} url={link.url} />
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <LinkLabel displayText={link.displayText} url={link.url} />
-                )}
+            <li key={`link-${index}`} className="flex w-full min-w-0 items-start gap-1">
+              {editing ? (
+                <>
+                  <button
+                    type="button"
+                    className={`${quiet} focus-only`}
+                    aria-label="Move link up"
+                    disabled={index === 0}
+                    onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index - 1) }))}
+                  >
+                    <ChevronUp className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className={`${quiet} focus-only`}
+                    aria-label="Move link down"
+                    disabled={index === doc.links.length - 1}
+                    onClick={() => update((current) => ({ ...current, links: moveItem(current.links, index, index + 1) }))}
+                  >
+                    <ChevronDown className="size-4" />
+                  </button>
+                </>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <EmbeddedLink
+                  displayText={link.displayText}
+                  url={link.url}
+                  editing={editing}
+                  onText={(displayText) =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, displayText } : item,
+                      ),
+                    }))
+                  }
+                  onUrl={(nextUrl) =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, url: nextUrl } : item,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              {editing ? (
+                <button
+                  type="button"
+                  className={`${quiet} focus-only`}
+                  aria-label="Remove link"
+                  onClick={() =>
+                    update((current) => ({
+                      ...current,
+                      links: current.links.filter((_, itemIndex) => itemIndex !== index),
+                    }))
+                  }
+                >
+                  <Minus className="size-4" />
+                </button>
+              ) : null}
             </li>
           ))}
-          {doc.links.length === 0 ? <li className="text-sm text-muted italic">{copy.linkLabel}</li> : null}
         </ul>
       </div>
     </div>
   );
 
-  return (
-    <>
-      <FocusCard kicker="References & links" title="References & links" read={fields(false)} edit={fields(true)} />
-      <Dialog.Root open={urlIndex !== null} onOpenChange={(open) => !open && setUrlIndex(null)}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="no-print fixed inset-0 z-[60] bg-ink/40" />
-          <Dialog.Content className="no-print fixed top-1/2 left-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-sheet p-5 shadow-lift focus:outline-none">
-            <Dialog.Title className="font-serif text-2xl text-ink">Link URL</Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm text-muted">
-              Only the label is shown. This address stays behind that text.
-            </Dialog.Description>
-            <label className="mt-4 block text-sm text-muted">
-              {copy.linkUrl}
-              <input
-                type="url"
-                inputMode="url"
-                value={editingUrl?.url ?? ""}
-                placeholder="https:// or www.example.com"
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (urlIndex === null) return;
-                  update((current) => ({
-                    ...current,
-                    links: current.links.map((item, itemIndex) =>
-                      itemIndex === urlIndex ? { ...item, url: value } : item,
-                    ),
-                  }));
-                }}
-                className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-3 text-base text-ink outline-none"
-              />
-            </label>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 text-sm font-semibold text-accent-ink"
-                onClick={() => setUrlIndex(null)}
-              >
-                Done
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-    </>
-  );
+  return <FocusCard kicker="References & links" title="References & links" read={fields(false)} edit={fields(true)} />;
 }
 
 export function FooterCard() {

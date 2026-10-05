@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { ChevronDown, Moon, Sun } from "lucide-react";
 import { Toaster } from "sonner";
 import { plainText } from "@/lib/document/html";
 import { DocProvider, useDoc } from "@/lib/document/context";
@@ -8,40 +8,29 @@ import { copy } from "@/lib/document/copy";
 import { ActionDock, AddProTip, FooterCard, HeaderCard, ProTipCard, ReferencesCard } from "./meta-cards";
 import { AddSection, SectionCard } from "./section-card";
 
-function ThemeSwitch() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+function ThemeFab() {
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
-    setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    setDark(document.documentElement.classList.contains("dark"));
   }, []);
 
-  const choose = (next: "light" | "dark") => {
-    document.documentElement.classList.toggle("dark", next === "dark");
-    localStorage.setItem("uxrnd.theme", next);
-    setTheme(next);
+  const toggle = () => {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("uxrnd.theme", next ? "dark" : "light");
+    setDark(next);
   };
 
   return (
-    <div className="no-print inline-flex rounded-full bg-sheet p-1 shadow-border" role="group" aria-label="Color theme">
-      {(["light", "dark"] as const).map((option) => {
-        const selected = theme === option;
-        const Icon = option === "light" ? Sun : Moon;
-        return (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => choose(option)}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${
-              selected ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"
-            }`}
-          >
-            <Icon className="size-4" />
-            {option === "light" ? "Light" : "Dark"}
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      className="no-print fixed bottom-24 left-4 z-30 inline-flex size-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-lift wide:bottom-6"
+    >
+      {dark ? <Sun className="size-6" /> : <Moon className="size-6" />}
+    </button>
   );
 }
 
@@ -49,6 +38,7 @@ function Contents() {
   const { doc } = useDoc();
   const sections = orderedSections(doc);
   const [active, setActive] = useState<number | null>(sections[0]?.id ?? null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const nodes = sections
@@ -65,22 +55,63 @@ function Contents() {
         const id = Number((current.target as HTMLElement).dataset.sectionId);
         if (Number.isFinite(id)) setActive(id);
       },
-      { rootMargin: "-96px 0px -45% 0px", threshold: [0, 0.15, 0.4] },
+      { rootMargin: "-48px 0px -55% 0px", threshold: [0, 0.15, 0.4] },
     );
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
   }, [doc.sectionOrder.join("|"), sections.length]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener("scroll", close, { passive: true });
+    return () => window.removeEventListener("scroll", close);
+  }, [menuOpen]);
+
   const activeSection = sections.find((section) => section.id === active) ?? sections[0];
-  const activeTitle = plainText(activeSection?.title ?? "") || copy.section;
+  const jump = (id: number) => {
+    setMenuOpen(false);
+    document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <nav
-      aria-label="Contents"
-      className="sticky-contents sticky top-0 z-20 -mx-4 border-b border-line bg-paper/95 px-4 py-3 backdrop-blur md:mx-0 md:rounded-2xl md:border md:px-4"
-    >
-      <h2 className="truncate font-serif text-2xl text-ink">{activeTitle}</h2>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+    <nav aria-label="Contents" className="sticky-contents sticky top-0 z-20 -mx-4 bg-paper/95 px-4 py-2 backdrop-blur md:mx-0">
+      <div className="relative wide:hidden">
+        <button
+          type="button"
+          className="inline-flex max-w-full items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-ink"
+          aria-expanded={menuOpen}
+          aria-haspopup="listbox"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <span className="truncate">{plainText(activeSection?.title ?? "") || copy.section}</span>
+          <ChevronDown className="size-4 shrink-0" />
+        </button>
+        {menuOpen ? (
+          <ul className="absolute top-full left-0 z-30 mt-2 max-h-64 w-64 overflow-y-auto rounded-2xl bg-sheet p-1 shadow-lift" role="listbox">
+            {sections.map((section) => {
+              const label = plainText(section.title) || copy.section;
+              const current = section.id === activeSection?.id;
+              return (
+                <li key={section.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={current}
+                    onClick={() => jump(section.id)}
+                    className={`block w-full truncate rounded-xl px-3 py-3 text-left text-sm ${
+                      current ? "bg-accent text-accent-ink" : "text-ink hover:bg-paper"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </div>
+      <div className="hidden gap-2 overflow-x-auto wide:flex">
         {sections.map((section) => {
           const label = plainText(section.title) || copy.section;
           const current = section.id === activeSection?.id;
@@ -88,8 +119,8 @@ function Contents() {
             <button
               key={section.id}
               type="button"
-              onClick={() => document.getElementById(`section-${section.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className={`max-w-56 shrink-0 truncate rounded-full px-4 py-3 text-sm font-medium ${
+              onClick={() => jump(section.id)}
+              className={`max-w-56 shrink-0 truncate rounded-full px-4 py-2 text-sm font-medium ${
                 current ? "bg-accent text-accent-ink" : "bg-sheet text-ink shadow-border"
               }`}
               aria-current={current ? "true" : undefined}
@@ -114,9 +145,6 @@ function Brief() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pt-6 pb-28 md:px-6 md:pt-10 wide:pr-36">
-      <div className="mb-4 flex justify-end">
-        <ThemeSwitch />
-      </div>
       <HeaderCard />
       <div className="mt-4">
         <Contents />
@@ -143,6 +171,7 @@ export function DocumentApp() {
     <DocProvider>
       <main>
         <Brief />
+        <ThemeFab />
         <Toaster position="bottom-right" offset={{ bottom: "5.75rem", right: "1rem" }} className="no-print" toastOptions={{ className: "no-print" }} />
       </main>
     </DocProvider>

@@ -37,6 +37,7 @@ type RichFieldProps = {
   placeholder: string;
   ariaLabel: string;
   className?: string;
+  shellClassName?: string;
   singleLine?: boolean;
 };
 
@@ -103,6 +104,7 @@ export function RichField({
   placeholder,
   ariaLabel,
   className = "",
+  shellClassName = "w-full min-w-0 flex-1",
   singleLine = false,
 }: RichFieldProps) {
   const editorRef = useRef<HTMLDivElement>(null);
@@ -193,7 +195,7 @@ export function RichField({
   }
 
   return (
-    <div className="group/field relative min-w-0 flex-1">
+    <div className={`group/field relative ${shellClassName}`}>
       <div
         ref={editorRef}
         contentEditable

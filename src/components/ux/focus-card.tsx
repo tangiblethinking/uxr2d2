@@ -24,7 +24,7 @@ export function FocusCard({
     <article
       id={sectionId ? `section-${sectionId}` : undefined}
       data-section-id={sectionId}
-      className={`scroll-mt-40 rounded-2xl shadow-border ${surface}`}
+      className={`scroll-mt-16 rounded-2xl shadow-border ${surface}`}
     >
       <div className="flex items-center justify-between gap-3 px-4 pt-4 md:px-6 md:pt-5">
         <p className="text-xs font-semibold tracking-[0.14em] text-accent uppercase">{kicker}</p>
